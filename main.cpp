@@ -3,8 +3,10 @@
 #include <vulkan/vulkan.hpp>
 #define VK_USE_PLATFORM_MACOS_MVK
 #define GLFW_INCLUDE_VULKAN
-#include <glfw/glfw3.h>
+#include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_COCOA
+
+
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
@@ -16,7 +18,7 @@ std::vector<const char*> getRequiredExtensions() {
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
         std::vector<const char*> extensions;
     std::cout << "GLFW required extensions: " << glfwExtensionCount << std::endl;
-        
+
         for(uint32_t i = 0; i < glfwExtensionCount; i++) {
             std::cout << glfwExtensions[i] << std::endl;
             extensions.push_back(glfwExtensions[i]);
@@ -33,9 +35,11 @@ std::vector<const char*> getRequiredExtensions() {
         return extensions;
 }
 
+VkInstance instance;
+
 bool createInstance(){
 
-        VkInstance _instance;
+
 
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -55,7 +59,7 @@ bool createInstance(){
         auto extensions = getRequiredExtensions();
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
-        return vkCreateInstance(&createInfo, nullptr, &_instance) == VK_SUCCESS;
+        return vkCreateInstance(&createInfo, nullptr, &instance) == VK_SUCCESS;
 
 
 
@@ -69,9 +73,12 @@ int main()
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    
-    std::cout << "Hello, World!" << std::endl;
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+
+    glfwInitVulkanLoader(vkGetInstanceProcAddr);
+
+
     GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGLProject", NULL, NULL);
     if (window == NULL)
     {
@@ -80,12 +87,12 @@ int main()
         return -1;
     }
 
+
     if(createInstance()){
-        std::cout << "Vulkan Available" << std::endl;
-    }else{
-        std::cout << "Vulkan Not Available" << std::endl;
-    }
-    glfwWindowHint(GLFW_DEPTH_BITS, 24); // Request a depth buffer with 24 bits
+        std::cout << "Something" << std::endl;
+    };
+
+
 
     while (!glfwWindowShouldClose(window))
     {

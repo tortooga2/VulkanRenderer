@@ -14,15 +14,18 @@ set(HEADER_FILS simpleObject.h)
 
 
 find_package(Vulkan REQUIRED)
-
+if (APPLE)
+find_package(glfw3 REQUIRED)
+elseif (WIN32)
 add_subdirectory(libs/glfw-3.4)
-
-
-
-
+endif ()
 
 
 # Add the executable
 add_executable(VulkanEngine ${SOURCE_FILS} ${HEADER_FILS})
 
-target_link_libraries(VulkanEngine PRIVATE Vulkan::Vulkan glfw)
+target_include_directories(VulkanEngine PRIVATE ${Vulkan_INCLUDE_DIRS})
+
+
+
+target_link_libraries(VulkanEngine PRIVATE glfw Vulkan::Vulkan)
