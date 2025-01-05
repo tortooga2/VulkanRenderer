@@ -9,8 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
-set(SOURCE_FILS main.cpp simpleObject.cpp)
-set(HEADER_FILS simpleObject.h)
+
 
 
 find_package(Vulkan REQUIRED)
@@ -31,11 +30,16 @@ elseif (APPLE)
     find_package(glfw3)
 endif ()
 
+
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
 # Add the executable
-add_executable(VulkanEngine ${SOURCE_FILS} ${HEADER_FILS})
+add_executable(VulkanEngine main.cpp ${SOURCES})
+
+target_include_directories(VulkanEngine PRIVATE ${CMAKE_SOURCE_DIR}/includes)
 
 
+target_include_directories(VulkanEngine PRIVATE ${Vulkan_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS})
 
-target_include_directories(VulkanEngine PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_link_libraries(VulkanEngine PRIVATE glfw Vulkan::Vulkan)
