@@ -30,6 +30,7 @@ std::vector<const char *> getRequiredExtensions()
 }
 
 VkInstance instance;
+VkSurfaceKHR surface;
 
 bool createInstance()
 {
@@ -61,11 +62,10 @@ int main()
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 
     glfwInitVulkanLoader(vkGetInstanceProcAddr);
 
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGLProject", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "They Unlock Things?", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -75,7 +75,11 @@ int main()
 
     if (createInstance())
     {
-        std::cout << "Vulkan is working!" << std::endl;
+        std::cout << "Vulkan Is Available" << std::endl;
+    }
+    else
+    {
+        std::cout << "Vulkan Is Not Available" << std::endl;
     };
 
     while (!glfwWindowShouldClose(window))
