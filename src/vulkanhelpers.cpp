@@ -33,11 +33,15 @@ void VKHelpers::CreateVulkanInstance(VkInstance &instance)
     createInfo.pApplicationInfo = &appInfo;
 
     uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    std::vector<const char *> Extensions;
+    GetExtensions(glfwExtensionCount, Extensions);
 
     createInfo.enabledExtensionCount = glfwExtensionCount;
-    createInfo.ppEnabledExtensionNames = glfwExtensions;
+    createInfo.ppEnabledExtensionNames = Extensions.data();
+
+#ifdef __APPLE__
+    createInfo.flags |= VK_INSTANCE_CREATE_PORTABILITY_SUBSET_BIT_KHR;
+#endif
 
     createInfo.enabledLayerCount = 0;
 
@@ -49,4 +53,19 @@ void VKHelpers::CreateVulkanInstance(VkInstance &instance)
     {
         std::cout << "Vulkan instance created successfully" << std::endl;
     }
+}
+
+void VKHelpers::GetExtensions(uint32_t &ExtensionCount, std::vector<const char *> &Extensions)
+{
+
+    const char **glfwExtensionsArray = glfwGetRequiredInstanceExtensions(&ExtensionCount);
+    for (uint32_t i = 0; i < ExtensionCount; i++)
+    {
+        std::cout << "GLFW Extension: " << glfwExtensionsArray[i] << std::endl;
+        Extensions.push_back(glfwExtensionsArray[i]);
+    }
+
+#ifdef __APPLE__
+    glfwExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
 }
