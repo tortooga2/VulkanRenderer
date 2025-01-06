@@ -22,6 +22,7 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
     VkDebugUtilsMessengerEXT debugMessenger;
+    VkQueue graphicsQueue;
 
     void initWindow()
     {
@@ -32,6 +33,7 @@ private:
         VKHelpers::CreateVulkanInstance(instance);
         VKHelpers::SetupDebugMessenger(instance, debugMessenger);
         VKHelpers::PickPhysicalDevice(instance, physicalDevice);
+        VKHelpers::CreateLogicalDevice(physicalDevice, device);
     };
     void mainLoop()
     {
@@ -46,6 +48,7 @@ private:
         {
             VKHelpers::DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
+        vkDestroyDevice(device, nullptr);
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);

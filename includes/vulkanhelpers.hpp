@@ -34,7 +34,7 @@ namespace VKHelpers
 
     QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 
-    void CreateLogicalDevice(VkPhysicalDevice physicalDevice, VkDevice &device);
+    void CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device);
 
     void GetExtensions(uint32_t &extensionCount, std::vector<const char *> &Extensions);
 
