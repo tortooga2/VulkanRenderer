@@ -79,7 +79,7 @@ void VKHelpers::CreateVulkanInstance(VkInstance &instance)
     }
 }
 
-void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice)
+void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice, VkSurfaceKHR &surface)
 {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -108,7 +108,7 @@ void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physi
 
         std::cout << "Device Name: " << deviceProperties.deviceName << std::endl;
 
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && FindQueueFamilies(device).isComplete())
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && FindQueueFamilies(device, surface).isComplete())
         {
             physicalDevice = device;
             break;
@@ -125,7 +125,7 @@ void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physi
     }
 }
 
-VKHelpers::QueueFamilyIndices VKHelpers::FindQueueFamilies(VkPhysicalDevice device)
+VKHelpers::QueueFamilyIndices VKHelpers::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR &surface)
 {
     VKHelpers::QueueFamilyIndices indices;
 
@@ -142,6 +142,12 @@ VKHelpers::QueueFamilyIndices VKHelpers::FindQueueFamilies(VkPhysicalDevice devi
         {
             indices.graphicsFamily = i;
         }
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+        if (presentSupport)
+        {
+            indices.presentFamily = i;
+        }
 
         if (indices.isComplete())
         {
@@ -154,9 +160,9 @@ VKHelpers::QueueFamilyIndices VKHelpers::FindQueueFamilies(VkPhysicalDevice devi
     return indices;
 }
 
-void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue)
+void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue, VkSurfaceKHR &surface)
 {
-    QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
+    QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, surface);
 
     VkDeviceQueueCreateInfo queueCreateInfo = {};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -165,7 +171,7 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
     float queuePriority = 1.0f;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
-    std::vector<const char*> deviceExtensions;
+    std::vector<const char *> deviceExtensions;
 
 #ifdef __APPLE__
     deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -182,7 +188,6 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
 
     if (enableValidationLayers)
     {

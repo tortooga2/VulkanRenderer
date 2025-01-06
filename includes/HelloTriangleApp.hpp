@@ -23,6 +23,7 @@ private:
     VkDevice device;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkQueue graphicsQueue;
+    VkQueue presentQueue;
     VkSurfaceKHR surface;
 
     void initWindow()
@@ -34,8 +35,8 @@ private:
         VKHelpers::CreateVulkanInstance(instance);
         VKHelpers::SetupDebugMessenger(instance, debugMessenger);
         VKHelpers::CreateSurface(instance, window, surface);
-        VKHelpers::PickPhysicalDevice(instance, physicalDevice);
-        VKHelpers::CreateLogicalDevice(physicalDevice, device, graphicsQueue);
+        VKHelpers::PickPhysicalDevice(instance, physicalDevice, surface);
+        VKHelpers::CreateLogicalDevice(physicalDevice, device, graphicsQueue, surface);
     };
     void mainLoop()
     {

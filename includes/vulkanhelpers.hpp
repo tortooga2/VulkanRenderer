@@ -3,7 +3,6 @@
 #include <optional>
 
 #include <vulkan/vulkan.hpp>
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -19,9 +18,11 @@ namespace VKHelpers
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
+
         bool isComplete()
         {
-            return graphicsFamily.has_value();
+            return graphicsFamily.has_value() && presentFamily.has_value();
         }
     };
 
@@ -31,11 +32,11 @@ namespace VKHelpers
 
     void CreateVulkanInstance(VkInstance &instance);
 
-    void PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice);
+    void PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice, VkSurfaceKHR &surface);
 
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR &surface);
 
-    void CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue);
+    void CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue, VkSurfaceKHR &surface);
 
     void CreateSurface(VkInstance &instance, GLFWwindow *window, VkSurfaceKHR &surface);
 
