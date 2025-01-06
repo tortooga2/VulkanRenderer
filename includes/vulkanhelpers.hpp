@@ -3,6 +3,7 @@
 #include <optional>
 
 #include <vulkan/vulkan.hpp>
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -34,7 +35,9 @@ namespace VKHelpers
 
     QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 
-    void CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device);
+    void CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue);
+
+    void CreateSurface(VkInstance &instance, GLFWwindow *window, VkSurfaceKHR &surface);
 
     void GetExtensions(uint32_t &extensionCount, std::vector<const char *> &Extensions);
 

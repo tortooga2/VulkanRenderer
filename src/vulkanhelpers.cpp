@@ -154,7 +154,7 @@ VKHelpers::QueueFamilyIndices VKHelpers::FindQueueFamilies(VkPhysicalDevice devi
     return indices;
 }
 
-void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device)
+void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue)
 {
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
 
@@ -191,6 +191,20 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
     else
     {
         std::cout << "Logical device created successfully" << std::endl;
+    }
+
+    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+}
+
+void VKHelpers::CreateSurface(VkInstance &instance, GLFWwindow *window, VkSurfaceKHR &surface)
+{
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create window surface!");
+    }
+    else
+    {
+        std::cout << "Window surface created successfully" << std::endl;
     }
 }
 
