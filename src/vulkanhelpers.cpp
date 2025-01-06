@@ -51,7 +51,7 @@ void VKHelpers::CreateVulkanInstance(VkInstance &instance)
     createInfo.ppEnabledExtensionNames = Extensions.data();
 
 #ifdef __APPLE__
-    createInfo.flags |= VK_INSTANCE_CREATE_PORTABILITY_SUBSET_BIT_KHR;
+    createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
 
     if (enableValidationLayers)
@@ -85,7 +85,7 @@ void VKHelpers::GetExtensions(uint32_t &ExtensionCount, std::vector<const char *
     }
 
 #ifdef __APPLE__
-    glfwExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    Extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
     if (enableValidationLayers)
