@@ -79,6 +79,52 @@ void VKHelpers::CreateVulkanInstance(VkInstance &instance)
     }
 }
 
+void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice)
+{
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+    if (deviceCount == 0)
+    {
+        throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+    }
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+#ifdef __APPLE__
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(devices[0], &deviceProperties);
+    std::cout << "Device Name: " << deviceProperties.deviceName << std::endl;
+    physicalDevice = devices[0];
+    std::cout << "Physical device picked successfully" << std::endl;
+    return;
+#endif
+
+    for (const auto &device : devices)
+    {
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+        std::cout << "Device Name: " << deviceProperties.deviceName << std::endl;
+
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        {
+            physicalDevice = device;
+            break;
+        }
+    }
+
+    if (physicalDevice == VK_NULL_HANDLE)
+    {
+        throw std::runtime_error("Failed to find a suitable GPU!");
+    }
+    else
+    {
+        std::cout << "Physical device picked successfully" << std::endl;
+    }
+}
+
 void VKHelpers::GetExtensions(uint32_t &ExtensionCount, std::vector<const char *> &Extensions)
 {
 

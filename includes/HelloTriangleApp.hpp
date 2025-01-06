@@ -19,6 +19,7 @@ private:
 
     GLFWwindow *window;
     VkInstance instance;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger;
 
     void initWindow()
@@ -29,6 +30,7 @@ private:
     {
         VKHelpers::CreateVulkanInstance(instance);
         VKHelpers::SetupDebugMessenger(instance, debugMessenger);
+        VKHelpers::PickPhysicalDevice(instance, physicalDevice);
     };
     void mainLoop()
     {

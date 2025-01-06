@@ -20,6 +20,8 @@ namespace VKHelpers
 
     void CreateVulkanInstance(VkInstance &instance);
 
+    void PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice);
+
     void GetExtensions(uint32_t &extensionCount, std::vector<const char *> &Extensions);
 
     bool CheckValidationLayerSupport();
