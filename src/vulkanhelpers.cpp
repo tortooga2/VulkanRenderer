@@ -108,7 +108,7 @@ void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physi
 
         std::cout << "Device Name: " << deviceProperties.deviceName << std::endl;
 
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && FindQueueFamilies(device).isComplete())
         {
             physicalDevice = device;
             break;
@@ -123,6 +123,35 @@ void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physi
     {
         std::cout << "Physical device picked successfully" << std::endl;
     }
+}
+
+VKHelpers::QueueFamilyIndices VKHelpers::FindQueueFamilies(VkPhysicalDevice device)
+{
+    VKHelpers::QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    int i = 0;
+    for (const auto &queueFamily : queueFamilies)
+    {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.graphicsFamily = i;
+        }
+
+        if (indices.isComplete())
+        {
+            break;
+        }
+
+        i++;
+    }
+
+    return indices;
 }
 
 void VKHelpers::GetExtensions(uint32_t &ExtensionCount, std::vector<const char *> &Extensions)

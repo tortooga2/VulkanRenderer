@@ -20,6 +20,7 @@ private:
     GLFWwindow *window;
     VkInstance instance;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device;
     VkDebugUtilsMessengerEXT debugMessenger;
 
     void initWindow()

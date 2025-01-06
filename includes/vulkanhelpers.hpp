@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <optional>
 
 #include <vulkan/vulkan.hpp>
 #define GLFW_INCLUDE_VULKAN
@@ -14,6 +15,15 @@ namespace VKHelpers
     const bool enableValidationLayers = true;
 #endif
 
+    struct QueueFamilyIndices
+    {
+        std::optional<uint32_t> graphicsFamily;
+        bool isComplete()
+        {
+            return graphicsFamily.has_value();
+        }
+    };
+
     const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
     void CreateWindow(GLFWwindow *&window, const int width, const int height, const char *title);
@@ -21,6 +31,10 @@ namespace VKHelpers
     void CreateVulkanInstance(VkInstance &instance);
 
     void PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice);
+
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+
+    void CreateLogicalDevice(VkPhysicalDevice physicalDevice, VkDevice &device);
 
     void GetExtensions(uint32_t &extensionCount, std::vector<const char *> &Extensions);
 
