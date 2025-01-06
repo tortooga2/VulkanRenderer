@@ -165,7 +165,14 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
     float queuePriority = 1.0f;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
-    VkPhysicalDeviceFeatures deviceFeatures = {};
+    std::vector<const char*> deviceExtensions;
+
+#ifdef __APPLE__
+    deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    deviceExtensions.push_back("VK_KHR_portability_subset");
+#endif
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -173,7 +180,10 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
     createInfo.queueCreateInfoCount = 1;
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+
     if (enableValidationLayers)
     {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
