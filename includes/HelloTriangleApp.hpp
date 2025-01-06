@@ -19,6 +19,7 @@ private:
 
     GLFWwindow *window;
     VkInstance instance;
+    VkDebugUtilsMessengerEXT debugMessenger;
 
     void initWindow()
     {
@@ -27,6 +28,7 @@ private:
     void initVulkan()
     {
         VKHelpers::CreateVulkanInstance(instance);
+        VKHelpers::SetupDebugMessenger(instance, debugMessenger);
     };
     void mainLoop()
     {
@@ -37,6 +39,10 @@ private:
     };
     void cleanup()
     {
+        if (VKHelpers::enableValidationLayers)
+        {
+            VKHelpers::DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        }
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);
