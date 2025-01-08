@@ -7,7 +7,7 @@
 
 int main()
 {
-    HelloTriangleApp app(SCR_WIDTH, SCR_HEIGHT);
+    MainApp app(SCR_WIDTH, SCR_HEIGHT);
     try
     {
         app.run();

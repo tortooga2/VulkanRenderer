@@ -79,6 +79,23 @@ void VKHelpers::CreateVulkanInstance(VkInstance &instance)
     }
 }
 
+bool VKHelpers::IsDeviceSupported(VkPhysicalDevice &device, VkSurfaceKHR &surface)
+{
+    VKHelpers::QueueFamilyIndices indices = VKHelpers::FindQueueFamilies(device, surface);
+
+    bool extensionsSupported = VKHelpers::CheckDeviceExtensionSupport(device);
+
+    bool swapChainAdequate = false;
+    if (extensionsSupported)
+    {
+        std::cout << "Device supports required extensions" << std::endl;
+        VKHelpers::SwapChainSupportDetails swapChainSupport = VKHelpers::QuerySwapChainSupport(device, surface);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+
+    return indices.isComplete() && extensionsSupported && swapChainAdequate;
+}
+
 void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice, VkSurfaceKHR &surface)
 {
     uint32_t deviceCount = 0;
@@ -99,21 +116,21 @@ void VKHelpers::PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physi
     physicalDevice = devices[0];
     std::cout << "Physical device picked successfully" << std::endl;
     return;
-#endif
+#else
 
-    for (const auto &device : devices)
+    for (auto &device : devices)
     {
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
-        std::cout << "Device Name: " << deviceProperties.deviceName << std::endl;
-
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && FindQueueFamilies(device, surface).isComplete())
+        if (IsDeviceSupported(device, surface))
         {
+            VkPhysicalDeviceProperties deviceProperties;
+            vkGetPhysicalDeviceProperties(device, &deviceProperties);
+            std::cout << "Device Name: " << deviceProperties.deviceName << std::endl;
             physicalDevice = device;
             break;
         }
     }
+#endif
 
     if (physicalDevice == VK_NULL_HANDLE)
     {
@@ -160,21 +177,25 @@ VKHelpers::QueueFamilyIndices VKHelpers::FindQueueFamilies(VkPhysicalDevice devi
     return indices;
 }
 
-void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue, VkSurfaceKHR &surface)
+void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue, VkQueue &presentQueue, VkSurfaceKHR &surface)
 {
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, surface);
 
-    VkDeviceQueueCreateInfo queueCreateInfo = {};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-    queueCreateInfo.queueCount = 1;
-    float queuePriority = 1.0f;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-    std::vector<const char *> deviceExtensions;
+    float queuePriority = 1.0f;
+    for (uint32_t queueFamily : uniqueQueueFamilies)
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
 #ifdef __APPLE__
-    deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     deviceExtensions.push_back("VK_KHR_portability_subset");
 #endif
 
@@ -182,8 +203,8 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pEnabledFeatures = &deviceFeatures;
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
@@ -209,9 +230,10 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
     }
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+    vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
-void VKHelpers::CreateSurface(VkInstance &instance, GLFWwindow *window, VkSurfaceKHR &surface)
+void VKHelpers::CreateSurface(VkInstance &instance, GLFWwindow *&window, VkSurfaceKHR &surface)
 {
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
     {
@@ -243,6 +265,24 @@ void VKHelpers::GetExtensions(uint32_t &ExtensionCount, std::vector<const char *
     }
 
     ExtensionCount = static_cast<uint32_t>(Extensions.size());
+}
+
+bool VKHelpers::CheckDeviceExtensionSupport(VkPhysicalDevice &device)
+{
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+    for (const auto &extension : availableExtensions)
+    {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
 }
 
 bool VKHelpers::CheckValidationLayerSupport()
@@ -337,5 +377,76 @@ void VKHelpers::SetupDebugMessenger(VkInstance &instance, VkDebugUtilsMessengerE
     else
     {
         std::cout << "Debug messenger set up successfully" << std::endl;
+    }
+}
+
+VKHelpers::SwapChainSupportDetails VKHelpers::QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR &surface)
+{
+    SwapChainSupportDetails details;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+    if (formatCount != 0)
+    {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+    }
+
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+    if (presentModeCount != 0)
+    {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+    }
+
+    return details;
+}
+
+VkSurfaceFormatKHR VKHelpers::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
+{
+
+    for (const auto &availableFormat : availableFormats)
+    {
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        {
+            return availableFormat;
+        }
+    }
+
+    return availableFormats[0];
+}
+
+VkPresentModeKHR VKHelpers::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+{
+    for (const auto &availablePresentMode : availablePresentModes)
+    {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return availablePresentMode;
+        }
+    }
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D VKHelpers::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *&window, int width, int height)
+{
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+    {
+        return capabilities.currentExtent;
+    }
+    else
+    {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+        actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
+        actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
+
+        return actualExtent;
     }
 }

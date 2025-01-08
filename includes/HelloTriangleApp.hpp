@@ -1,9 +1,9 @@
 #include "vulkanhelpers.hpp"
 
-class HelloTriangleApp
+class MainApp
 {
 public:
-    HelloTriangleApp(int width, int height) : WIDTH(width), HEIGHT(height) {};
+    MainApp(int width, int height) : WIDTH(width), HEIGHT(height) {};
 
     void run()
     {
@@ -28,7 +28,7 @@ private:
 
     void initWindow()
     {
-        VKHelpers::CreateWindow(window, WIDTH, HEIGHT, "New Window");
+        VKHelpers::CreateWindow(window, WIDTH, HEIGHT, "Nature Engine");
     };
     void initVulkan()
     {
@@ -36,7 +36,7 @@ private:
         VKHelpers::SetupDebugMessenger(instance, debugMessenger);
         VKHelpers::CreateSurface(instance, window, surface);
         VKHelpers::PickPhysicalDevice(instance, physicalDevice, surface);
-        VKHelpers::CreateLogicalDevice(physicalDevice, device, graphicsQueue, surface);
+        VKHelpers::CreateLogicalDevice(physicalDevice, device, graphicsQueue, presentQueue, surface);
     };
     void mainLoop()
     {
@@ -51,6 +51,7 @@ private:
         {
             VKHelpers::DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
+
         vkDestroyDevice(device, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
