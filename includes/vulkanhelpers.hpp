@@ -3,10 +3,15 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <cstdint>
+#include <limits>
+#include <algorithm>
 
 #include <vulkan/vulkan.hpp>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+#include "fileManagment.hpp"
 
 namespace VKHelpers
 {
@@ -45,11 +50,13 @@ namespace VKHelpers
 
     void PickPhysicalDevice(VkInstance &instance, VkPhysicalDevice &physicalDevice, VkSurfaceKHR &surface);
 
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR &surface);
-
     void CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &device, VkQueue &graphicsQueue, VkQueue &presentQueue, VkSurfaceKHR &surface);
 
     void CreateSurface(VkInstance &instance, GLFWwindow *&window, VkSurfaceKHR &surface);
+
+    void CreateSwapChain(GLFWwindow *&window, VkPhysicalDevice &physicalDevice, VkDevice &device, VkSurfaceKHR &surface, VkSwapchainKHR &swapChain, std::vector<VkImage> &swapChainImages, VkExtent2D &swapChainExtent, VkFormat &swapChainImageFormat);
+
+    void CreateImageViews(VkDevice &device, std::vector<VkImageView> &swapChainImageViews, std::vector<VkImage> &swapChainImages, VkFormat &swapChainImageFormat);
 
     void GetExtensions(uint32_t &extensionCount, std::vector<const char *> &Extensions);
 
@@ -59,13 +66,15 @@ namespace VKHelpers
 
     bool CheckDeviceExtensionSupport(VkPhysicalDevice &device);
 
-    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger);
-
     void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator);
 
     void SetupDebugMessenger(VkInstance &instance, VkDebugUtilsMessengerEXT &debugMessenger);
 
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+
+    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger);
+
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR &surface);
 
     SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR &surface);
 
@@ -73,7 +82,9 @@ namespace VKHelpers
 
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
 
-    VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *&window, int width, int height);
+    VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *&window);
+
+    VkShaderModule CreateShaderModule(const std::vector<char> &code, VkDevice &device);
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

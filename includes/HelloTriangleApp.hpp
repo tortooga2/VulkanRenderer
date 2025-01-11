@@ -1,4 +1,11 @@
 #include "vulkanhelpers.hpp"
+#include "fileManagment.hpp"
+
+#ifdef NDEBUG
+const char *path = "./Shaders/";
+#else
+const char *path = "./Shaders/compiled/";
+#endif
 
 class MainApp
 {
@@ -25,6 +32,11 @@ private:
     VkQueue graphicsQueue;
     VkQueue presentQueue;
     VkSurfaceKHR surface;
+    VkSwapchainKHR swapChain;
+    std::vector<VkImage> swapChainImages;
+    VkExtent2D swapChainExtent;
+    VkFormat swapChainImageFormat;
+    std::vector<VkImageView> swapChainImageViews;
 
     void initWindow()
     {
@@ -37,6 +49,8 @@ private:
         VKHelpers::CreateSurface(instance, window, surface);
         VKHelpers::PickPhysicalDevice(instance, physicalDevice, surface);
         VKHelpers::CreateLogicalDevice(physicalDevice, device, graphicsQueue, presentQueue, surface);
+        VKHelpers::CreateSwapChain(window, physicalDevice, device, surface, swapChain, swapChainImages, swapChainExtent, swapChainImageFormat);
+        VKHelpers::CreateImageViews(device, swapChainImageViews, swapChainImages, swapChainImageFormat);
     };
     void mainLoop()
     {
@@ -47,6 +61,12 @@ private:
     };
     void cleanup()
     {
+        for (auto imageView : swapChainImageViews)
+        {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+
         if (VKHelpers::enableValidationLayers)
         {
             VKHelpers::DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
