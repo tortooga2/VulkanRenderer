@@ -58,6 +58,20 @@ namespace VKHelpers
 
     void CreateImageViews(VkDevice &device, std::vector<VkImageView> &swapChainImageViews, std::vector<VkImage> &swapChainImages, VkFormat &swapChainImageFormat);
 
+    void CreateRenderPass(VkDevice &device, VkFormat &swapChainImageFormat, VkRenderPass &renderPass);
+
+    void CreateGraphicsPipeline(VkDevice &device, VkExtent2D &swapChainExtent, VkPipelineLayout &pipelineLayout, VkRenderPass &renderPass, VkPipeline &graphicsPipeline);
+
+    void CreateFramebuffers(VkDevice &device, std::vector<VkFramebuffer> &swapChainFramebuffers, VkRenderPass &renderPass, std::vector<VkImageView> &swapChainImageViews, VkExtent2D &swapChainExtent);
+
+    void CreateCommandPool(VkDevice &device, VkCommandPool &commandPool, QueueFamilyIndices &indices);
+
+    void CreateCommandBuffers(VkDevice &device, VkCommandPool &commandPool, VkCommandBuffer &commandBuffer, VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers, VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline, VkPipelineLayout &pipelineLayout);
+
+    void CreateSemaphores(VkDevice &device, VkSemaphore &semephore);
+
+    void CreateFences(VkDevice &device, VkFence &fence);
+
     void GetExtensions(uint32_t &extensionCount, std::vector<const char *> &Extensions);
 
     bool CheckValidationLayerSupport();
