@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "includes/HelloTriangleApp.hpp"
+#include "MainApp.hpp"
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
