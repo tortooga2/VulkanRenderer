@@ -1,13 +1,26 @@
 import os
 import platform
 
+cmake_command = "cmake --build ./build"
+run_command = ".\\build\\Debug\\VulkanEngine.exe"
+glslc_path = "C:\\VulkanSDK\\1.3.268.0\\Bin\\glslc.exe"
 
-if platform.system() == "Windows":
-    os.system("cmake --build ./build/")
-    os.system(".\\build\\Debug\\VulkanEngine.exe")
 
-elif platform.system() == "Darwin":
-    os.system("cmake --build ./build/")
-    os.system("./build/VulkanEngine")
+if platform.system() == "Darwin":
+    cmake_command = "cmake --build ./build"
+    run_command = "./build/VulkanEngine"
+    
+
+
+os.system(cmake_command)
+os.system(run_command)
+
+
+
+
+
+
+
+
 
 
