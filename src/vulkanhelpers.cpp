@@ -579,10 +579,6 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-#ifdef __APPLE__
-    deviceExtensions.push_back("VK_KHR_portability_subset");
-#endif
-
     VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo = {};
@@ -591,8 +587,8 @@ void VKHelpers::CreateLogicalDevice(VkPhysicalDevice &physicalDevice, VkDevice &
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(VKHelpers::deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = VKHelpers::deviceExtensions.data();
 
     if (enableValidationLayers)
     {

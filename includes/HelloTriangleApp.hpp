@@ -67,7 +67,8 @@ private:
         VKHelpers::CreateRenderPass(device, swapChainImageFormat, renderPass);
         VKHelpers::CreateGraphicsPipeline(device, swapChainExtent, pipelineLayout, renderPass, graphicsPipeline);
         VKHelpers::CreateFramebuffers(device, swapChainFramebuffers, renderPass, swapChainImageViews, swapChainExtent);
-        VKHelpers::CreateCommandPool(device, commandPool, VKHelpers::FindQueueFamilies(physicalDevice, surface));
+        auto temp = VKHelpers::FindQueueFamilies(physicalDevice, surface);
+        VKHelpers::CreateCommandPool(device, commandPool, temp);
         VKHelpers::CreateCommandBuffers(device, commandPool, commandBuffer, renderPass, swapChainFramebuffers, swapChainExtent, graphicsPipeline, pipelineLayout);
         VKHelpers::CreateSemaphores(device, imageAvailableSemaphore);
         VKHelpers::CreateSemaphores(device, renderFinishedSemaphore);
