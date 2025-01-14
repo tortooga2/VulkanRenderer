@@ -9,8 +9,8 @@ void VKHelpers::CreateWindow(GLFWwindow *&window, const int width, const int hei
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    // glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!window)
@@ -416,7 +416,7 @@ void VKHelpers::CreateCommandPool(VkDevice &device, VkCommandPool &commandPool, 
         std::cout << "Command pool created successfully" << std::endl;
     }
 }
-void VKHelpers::CreateCommandBuffers(VkDevice &device, VkCommandPool &commandPool, VkCommandBuffer &commandBuffer, VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers, VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline, VkPipelineLayout &pipelineLayout)
+void VKHelpers::CreateCommandBuffer(VkDevice &device, VkCommandPool &commandPool, VkCommandBuffer &commandBuffer, VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers, VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline, VkPipelineLayout &pipelineLayout)
 {
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -433,6 +433,26 @@ void VKHelpers::CreateCommandBuffers(VkDevice &device, VkCommandPool &commandPoo
         std::cout << "Command buffers allocated successfully" << std::endl;
     }
 }
+
+void VKHelpers::CreateCommandMultipleBuffers(VkDevice &device, VkCommandPool &commandPool, std::vector<VkCommandBuffer> &commandBuffer, uint32_t commandBufferSize, VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers, VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline, VkPipelineLayout &pipelineLayout)
+{
+    commandBuffer.resize(commandBufferSize);
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = static_cast<uint32_t>(commandBufferSize);
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffer.data()) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate command buffers!");
+    }
+    else
+    {
+        std::cout << "Command buffers allocated successfully" << std::endl;
+    }
+};
+
 void VKHelpers::CreateSemaphores(VkDevice &device, VkSemaphore &semaphore)
 {
     VkSemaphoreCreateInfo semaphoreInfo = {};

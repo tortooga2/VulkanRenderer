@@ -72,7 +72,9 @@ namespace VKHelpers
 
     void CreateCommandPool(VkDevice &device, VkCommandPool &commandPool, QueueFamilyIndices &indices);
 
-    void CreateCommandBuffers(VkDevice &device, VkCommandPool &commandPool, VkCommandBuffer &commandBuffer, VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers, VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline, VkPipelineLayout &pipelineLayout);
+    void CreateCommandBuffer(VkDevice &device, VkCommandPool &commandPool, VkCommandBuffer &commandBuffer, VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers, VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline, VkPipelineLayout &pipelineLayout);
+
+    void CreateCommandMultipleBuffers(VkDevice &device, VkCommandPool &commandPool, std::vector<VkCommandBuffer> &commandBuffer, uint32_t commandBufferSize, VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers, VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline, VkPipelineLayout &pipelineLayout);
 
     void CreateSemaphores(VkDevice &device, VkSemaphore &semephore);
 

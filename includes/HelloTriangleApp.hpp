@@ -23,6 +23,9 @@ public:
 private:
     const int WIDTH = 800;
     const int HEIGHT = 600;
+    const int MAX_FRAMES_IN_FLIGHT = 2;
+    uint32_t currentFrame = 0;
+    float time = 0;
 
     GLFWwindow *window;
     VkInstance instance;
@@ -45,11 +48,11 @@ private:
     VkPipeline graphicsPipeline;
 
     VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
+    std::vector<VkCommandBuffer> commandBuffers;
 
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
-    VkFence inFlightFence;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
 
     void initWindow()
     {
@@ -69,16 +72,25 @@ private:
         VKHelpers::CreateFramebuffers(device, swapChainFramebuffers, renderPass, swapChainImageViews, swapChainExtent);
         auto queueFam = VKHelpers::FindQueueFamilies(physicalDevice, surface);
         VKHelpers::CreateCommandPool(device, commandPool, queueFam);
-        VKHelpers::CreateCommandBuffers(device, commandPool, commandBuffer, renderPass, swapChainFramebuffers, swapChainExtent, graphicsPipeline, pipelineLayout);
-        VKHelpers::CreateSemaphores(device, imageAvailableSemaphore);
-        VKHelpers::CreateSemaphores(device, renderFinishedSemaphore);
-        VKHelpers::CreateFences(device, inFlightFence);
+
+        VKHelpers::CreateCommandMultipleBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT, renderPass, swapChainFramebuffers, swapChainExtent, graphicsPipeline, pipelineLayout);
+        imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+
+            VKHelpers::CreateSemaphores(device, imageAvailableSemaphores[i]);
+            VKHelpers::CreateSemaphores(device, renderFinishedSemaphores[i]);
+            VKHelpers::CreateFences(device, inFlightFences[i]);
+        }
     };
     void mainLoop()
     {
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
+            time += 0.001;
             DrawFrame();
         }
 
@@ -86,23 +98,18 @@ private:
     };
     void cleanup()
     {
-
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-        vkDestroyFence(device, inFlightFence, nullptr);
-        vkDestroyCommandPool(device, commandPool, nullptr);
-        for (auto framebuffer : swapChainFramebuffers)
+        cleanupSwapChain();
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            vkDestroyFramebuffer(device, framebuffer, nullptr);
+            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(device, inFlightFences[i], nullptr);
         }
+        vkDestroyCommandPool(device, commandPool, nullptr);
+
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
-        for (auto imageView : swapChainImageViews)
-        {
-            vkDestroyImageView(device, imageView, nullptr);
-        }
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
 
         if (VKHelpers::enableValidationLayers)
         {
@@ -119,31 +126,41 @@ private:
 
     void DrawFrame()
     {
-        vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-        vkResetFences(device, 1, &inFlightFence);
+        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapChain();
+            return;
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error("Failed to acquire swap chain image!");
+        }
 
-        vkResetCommandBuffer(commandBuffer, 0);
-        RecordCommandBuffer(imageIndex);
+        vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
+        vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+        RecordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+        VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-        VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+        VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to submit draw command buffer!");
         }
@@ -158,17 +175,51 @@ private:
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr; // Optional
-        vkQueuePresentKHR(presentQueue, &presentInfo);
+        result = vkQueuePresentKHR(presentQueue, &presentInfo);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        {
+            RecreateSwapChain();
+        }
+        else if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to present swap chain image!");
+        }
+
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void RecordCommandBuffer(uint32_t imageIndex)
+    void cleanupSwapChain()
+    {
+        for (auto framebuffer : swapChainFramebuffers)
+        {
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
+        }
+        for (auto swapChainImageView : swapChainImageViews)
+        {
+            vkDestroyImageView(device, swapChainImageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+    }
+
+    void RecreateSwapChain()
+    {
+        vkDeviceWaitIdle(device);
+
+        cleanupSwapChain();
+
+        VKHelpers::CreateSwapChain(window, physicalDevice, device, surface, swapChain, swapChainImages, swapChainExtent, swapChainImageFormat);
+        VKHelpers::CreateImageViews(device, swapChainImageViews, swapChainImages, swapChainImageFormat);
+        VKHelpers::CreateFramebuffers(device, swapChainFramebuffers, renderPass, swapChainImageViews, swapChainExtent);
+    }
+
+    void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
         VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = 0;                  // Optional
         beginInfo.pInheritanceInfo = nullptr; // Optional
 
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+        if (vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to begin recording command buffer!");
         }
@@ -180,7 +231,7 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{0.0f, 0.2f, 0.5f, 1.0f}}};
+        VkClearValue clearColor = {{{0.4f, 0.2f, 0.5f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
