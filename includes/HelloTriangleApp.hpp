@@ -94,6 +94,20 @@ private:
 
         vkDeviceWaitIdle(device);
     };
+
+    void cleanupSwapChain()
+    {
+        for (auto framebuffer : swapChainFramebuffers)
+        {
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
+        }
+        for (auto swapChainImageView : swapChainImageViews)
+        {
+            vkDestroyImageView(device, swapChainImageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+    }
+
     void cleanup()
     {
         cleanupSwapChain();
@@ -184,19 +198,6 @@ private:
         }
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-    }
-
-    void cleanupSwapChain()
-    {
-        for (auto framebuffer : swapChainFramebuffers)
-        {
-            vkDestroyFramebuffer(device, framebuffer, nullptr);
-        }
-        for (auto swapChainImageView : swapChainImageViews)
-        {
-            vkDestroyImageView(device, swapChainImageView, nullptr);
-        }
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 
     void RecreateSwapChain()
