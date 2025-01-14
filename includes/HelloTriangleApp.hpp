@@ -25,7 +25,6 @@ private:
     const int HEIGHT = 600;
     const int MAX_FRAMES_IN_FLIGHT = 2;
     uint32_t currentFrame = 0;
-    float time = 0;
 
     GLFWwindow *window;
     VkInstance instance;
@@ -90,7 +89,6 @@ private:
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
-            time += 0.001;
             DrawFrame();
         }
 
