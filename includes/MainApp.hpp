@@ -1,4 +1,6 @@
 #include "fileManagment.hpp"
+
+#define USING_VALIDATION_LAYERS
 #include "Graphics.hpp"
 
 #ifdef NDEBUG
@@ -23,11 +25,11 @@ public:
 private:
     const int WIDTH = 800;
     const int HEIGHT = 600;
-    const int MAX_FRAMES_IN_FLIGHT = 2;
-    uint32_t currentFrame = 0;
+    // const int MAX_FRAMES_IN_FLIGHT = 2;
+    // uint32_t currentFrame = 0;
 
     GLFWwindow *window;
-    gfx::VulkanInstance vulkanInstance;
+    // VulkanInstance vkInst;
 
     void initWindow()
     {
@@ -35,137 +37,44 @@ private:
     };
     void initVulkan()
     {
-        vulkanInstance.initVulkan(window);
+        VulkanInstance::getInstance().initVulkan(window);
+        VulkanInstance::getInstance().ChangeBackgroundColor(0.0f, 0.4f, 0.4f, 1.0f);
     };
     void mainLoop()
     {
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
-            DrawFrame();
+            VulkanInstance::getInstance().BeginDrawFrame();
+            VulkanInstance::getInstance().ResetCommandButter();
+            Draw(VulkanInstance::getInstance().commandBuffers[VulkanInstance::getInstance().currentFrame]);
+            VulkanInstance::getInstance().EndDrawFrame();
         }
 
-        vkDeviceWaitIdle(vulkanInstance.device);
+        vkDeviceWaitIdle(VulkanInstance::getInstance().device);
     };
 
     void cleanup()
     {
-        vulkanInstance.cleanup();
+        VulkanInstance::getInstance().cleanup();
 
         glfwDestroyWindow(window);
         glfwTerminate();
     };
 
-    void DrawFrame()
+    void Draw(VkCommandBuffer commandBuffer)
     {
-        vkWaitForFences(vulkanInstance.device, 1, &vulkanInstance.inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        VulkanInstance::getInstance().BeginCommandBuffer();
 
-        uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(vulkanInstance.device, vulkanInstance.swapChain, UINT64_MAX, vulkanInstance.imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            vulkanInstance.RecreateSwapChain(window);
-            return;
-        }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        {
-            throw std::runtime_error("Failed to acquire swap chain image!");
-        }
+        VulkanInstance::getInstance().BeginRenderPass();
 
-        vkResetFences(vulkanInstance.device, 1, &vulkanInstance.inFlightFences[currentFrame]);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, VulkanInstance::getInstance().graphicsPipeline);
 
-        vkResetCommandBuffer(vulkanInstance.commandBuffers[currentFrame], 0);
-        RecordCommandBuffer(vulkanInstance.commandBuffers[currentFrame], imageIndex);
-
-        VkSubmitInfo submitInfo = {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-        VkSemaphore waitSemaphores[] = {vulkanInstance.imageAvailableSemaphores[currentFrame]};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &vulkanInstance.commandBuffers[currentFrame];
-
-        VkSemaphore signalSemaphores[] = {vulkanInstance.renderFinishedSemaphores[currentFrame]};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-
-        if (vkQueueSubmit(vulkanInstance.graphicsQueue, 1, &submitInfo, vulkanInstance.inFlightFences[currentFrame]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to submit draw command buffer!");
-        }
-
-        VkPresentInfoKHR presentInfo = {};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
-        VkSwapchainKHR swapChains[] = {vulkanInstance.swapChain};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
-        presentInfo.pResults = nullptr; // Optional
-        result = vkQueuePresentKHR(vulkanInstance.presentQueue, &presentInfo);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-        {
-            vulkanInstance.RecreateSwapChain(window);
-        }
-        else if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to present swap chain image!");
-        }
-
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-    }
-
-    void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-    {
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0;                  // Optional
-        beginInfo.pInheritanceInfo = nullptr; // Optional
-
-        if (vkBeginCommandBuffer(vulkanInstance.commandBuffers[currentFrame], &beginInfo) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to begin recording command buffer!");
-        }
-
-        VkRenderPassBeginInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = vulkanInstance.renderPass;
-        renderPassInfo.framebuffer = vulkanInstance.swapChainFramebuffers[imageIndex]; // We only have one framebuffer
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = vulkanInstance.swapChainExtent;
-
-        VkClearValue clearColor = {{{0.2f, 0.2f, 0.5f, 1.0f}}};
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanInstance.graphicsPipeline);
-        VkViewport viewport = {};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = (float)vulkanInstance.swapChainExtent.width;
-        viewport.height = (float)vulkanInstance.swapChainExtent.height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-        VkRect2D scissor = {};
-        scissor.offset = {0, 0};
-        scissor.extent = vulkanInstance.swapChainExtent;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        VulkanInstance::getInstance().SetViewportandScissor(commandBuffer);
 
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
-        vkCmdEndRenderPass(commandBuffer);
-
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to record command buffer!");
-        }
+        VulkanInstance::getInstance().EndRenderPass();
+        VulkanInstance::getInstance().EndCommandBuffer();
     };
 };
