@@ -23,11 +23,22 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
         SYSTEM
 )
-
 FetchContent_MakeAvailable(glfw)
+
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm
+    GIT_TAG master
+    GIT_SHALLOW TRUE
+    SYSTEM
+)
+FetchContent_MakeAvailable(glm)
+
+
 
 elseif (APPLE)
     find_package(glfw3)
+    find_package(glm)
 endif ()
 
 
@@ -38,8 +49,7 @@ add_executable(VulkanEngine main.cpp ${SOURCES})
 
 target_include_directories(VulkanEngine PRIVATE ${CMAKE_SOURCE_DIR}/includes)
 
+target_include_directories(VulkanEngine PRIVATE ${Vulkan_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
 
-target_include_directories(VulkanEngine PRIVATE ${Vulkan_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS})
 
-
-target_link_libraries(VulkanEngine PRIVATE glfw Vulkan::Vulkan)
+target_link_libraries(VulkanEngine PRIVATE glfw glm Vulkan::Vulkan)
