@@ -1,6 +1,5 @@
 #include "fileManagment.hpp"
 
-#define USING_VALIDATION_LAYERS
 #include "Graphics.hpp"
 
 #ifdef NDEBUG
