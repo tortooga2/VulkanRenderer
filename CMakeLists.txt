@@ -37,8 +37,8 @@ FetchContent_MakeAvailable(glm)
 
 
 elseif (APPLE)
-    find_package(glfw3)
-    find_package(glm)
+    find_package(glfw3 REQUIRED)
+    find_package(glm REQUIRED)
 endif ()
 
 
@@ -52,4 +52,4 @@ target_include_directories(VulkanEngine PRIVATE ${CMAKE_SOURCE_DIR}/includes)
 target_include_directories(VulkanEngine PRIVATE ${Vulkan_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
 
 
-target_link_libraries(VulkanEngine PRIVATE glfw glm Vulkan::Vulkan)
+target_link_libraries(VulkanEngine PRIVATE glfw glm::glm Vulkan::Vulkan)
