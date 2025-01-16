@@ -65,11 +65,8 @@ private:
     void Draw(VkCommandBuffer commandBuffer)
     {
         VulkanInstance::getInstance().BeginCommandBuffer();
-
         VulkanInstance::getInstance().BeginRenderPass();
-
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, VulkanInstance::getInstance().graphicsPipeline);
-
+        VulkanInstance::getInstance().BindGraphicsPipeline(VulkanInstance::getInstance().graphicsPipeline);
         VulkanInstance::getInstance().SetViewportandScissor(commandBuffer);
 
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);

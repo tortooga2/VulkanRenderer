@@ -365,6 +365,24 @@ struct VulkanInstance
         vkCmdEndRenderPass(commandBuffers[currentFrame]);
     }
 
+    void BindGraphicsPipeline(VkPipeline &pipeline)
+    {
+        if (FrameStarted == false)
+        {
+            throw std::runtime_error("Frame not started! Cannot bind pipeline!");
+        }
+        else if (CommandBufferRecordingStarted == false)
+        {
+            throw std::runtime_error("Command buffer not started! Cannot bind pipeline!");
+        }
+        else if (RenderPassStarted == false)
+        {
+            throw std::runtime_error("Render pass not started! Cannot bind pipeline!");
+        }
+
+        vkCmdBindPipeline(commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    }
+
     void ResetCommandButter()
     {
         vkResetCommandBuffer(commandBuffers[currentFrame], 0);
