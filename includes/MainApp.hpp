@@ -8,10 +8,21 @@ const char *path = "./Shaders/";
 const char *path = "./Shaders/compiled/";
 #endif
 
+std::vector<VKHelpers::Vertex> vertices = {
+    {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}},
+    {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}};
+
+std::vector<VKHelpers::Vertex> vertices2 = {
+    {{0.3f, -0.3f}, {0.0f, 1.0f, 0.0f}},
+    {{0.8f, 0.8f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.2f, 0.8f}, {0.0f, 1.0f, 0.0f}}};
+
 class MainApp
 {
 public:
-    MainApp(int width, int height) : WIDTH(width), HEIGHT(height) {};
+    MainApp(int width, int height) : WIDTH(width), HEIGHT(height), vbAllocator(VulkanInstance::getInstance().device) {
+                                     };
 
     void run()
     {
@@ -28,6 +39,9 @@ private:
     // uint32_t currentFrame = 0;
 
     GLFWwindow *window;
+    VBAllocator vbAllocator;
+    VkBuffer vertexBuffer;
+    VkBuffer vertexBuffer2;
     // VulkanInstance vkInst;
 
     void initWindow()
@@ -37,7 +51,10 @@ private:
     void initVulkan()
     {
         VulkanInstance::getInstance().initVulkan(window);
-        VulkanInstance::getInstance().ChangeBackgroundColor(0.0f, 0.4f, 0.4f, 1.0f);
+        VulkanInstance::getInstance().ChangeBackgroundColor(0.0f, 0.0f, 0.0f, 1.0f);
+        vbAllocator.AddMesh(vertices, vertexBuffer);
+        vbAllocator.AddMesh(vertices2, vertexBuffer2);
+        vbAllocator.AllocateVertexBuffer(VulkanInstance::getInstance().physicalDevice);
     };
     void mainLoop()
     {
@@ -48,6 +65,7 @@ private:
             VulkanInstance::getInstance().ResetCommandButter();
             Draw(VulkanInstance::getInstance().commandBuffers[VulkanInstance::getInstance().currentFrame]);
             VulkanInstance::getInstance().EndDrawFrame();
+            VulkanInstance::getInstance().PresentFinalFrame();
         }
 
         vkDeviceWaitIdle(VulkanInstance::getInstance().device);
@@ -55,6 +73,7 @@ private:
 
     void cleanup()
     {
+        vbAllocator.Cleanup();
         VulkanInstance::getInstance().cleanup();
 
         glfwDestroyWindow(window);
@@ -67,6 +86,12 @@ private:
         VulkanInstance::getInstance().BeginRenderPass();
         VulkanInstance::getInstance().BindGraphicsPipeline(VulkanInstance::getInstance().graphicsPipeline);
         VulkanInstance::getInstance().SetViewportandScissor(commandBuffer);
+
+        vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer);
+
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer2);
 
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 

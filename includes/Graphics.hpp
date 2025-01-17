@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vulkanhelpers.hpp"
+#include "VBAllocator.hpp"
 #include "fileManagment.hpp"
 
 // namespace gfx
@@ -127,6 +128,7 @@ struct VulkanInstance
         VKHelpers::CreateSwapChain(window, physicalDevice, device, surface, swapChain, swapChainImages, swapChainExtent, swapChainImageFormat);
         VKHelpers::CreateImageViews(device, swapChainImageViews, swapChainImages, swapChainImageFormat);
         VKHelpers::CreateFramebuffers(device, swapChainFramebuffers, renderPass, swapChainImageViews, swapChainExtent);
+        SetRecordCommandBufferSettings();
     }
 
     void BeginDrawFrame()
@@ -202,6 +204,11 @@ struct VulkanInstance
         {
             throw std::runtime_error("Failed to submit draw command buffer!");
         }
+    }
+
+    void PresentFinalFrame()
+    {
+        VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
