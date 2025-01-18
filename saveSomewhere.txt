@@ -88,7 +88,9 @@ void VBAllocator::AllocateVertexBuffer(VkPhysicalDevice &physicalDevice)
     vkMapMemory(*device, vertexBufferMemory, 0, memRequirements.size, 0, &data);
     for (size_t i = 0; i < meshes.size(); i++)
     {
-        memcpy((char *)data + offsets[i], meshes[i]->data(), sizeof((*meshes[i])[0]) * meshes[i]->size());
+        VkDeviceSize meshSize = sizeof((*meshes[i])[0]) * meshes[i]->size();
+        memcpy((char *)data + offsets[i], meshes[i]->data(), meshSize);
+        std::cout << "Copied mesh " << i << " of size " << meshSize << " bytes to offset " << offsets[i] << std::endl;
     }
     vkUnmapMemory(*device, vertexBufferMemory);
 };
@@ -106,7 +108,7 @@ void VBAllocator::BindVertexBuffer(VkCommandBuffer &commandBuffer, VkBuffer &ver
 {
     VkBuffer vertexBuffersList[] = {vertexBuffer};
     VkDeviceSize offset = vertexBuffersMap[&vertexBuffer];
-    VkDeviceSize offsets[] = {0};
+    VkDeviceSize offsets[] = {offset};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffersList, offsets);
 }
 

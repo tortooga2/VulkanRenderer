@@ -20,10 +20,10 @@
 namespace VKHelpers
 {
 
-#ifdef USING_VALIDATION_LAYERS
-    const bool enableValidationLayers = true;
-#else
+#ifdef NDEBUG
     const bool enableValidationLayers = false;
+#else
+    const bool enableValidationLayers = true;
 #endif
 
     struct QueueFamilyIndices

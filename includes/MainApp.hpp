@@ -14,9 +14,14 @@ std::vector<VKHelpers::Vertex> vertices = {
     {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}};
 
 std::vector<VKHelpers::Vertex> vertices2 = {
-    {{0.3f, -0.3f}, {0.0f, 1.0f, 0.0f}},
+    {{0.0f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}};
+
+std::vector<VKHelpers::Vertex> vertices3 = {
+    {{0.3f, -0.2f}, {1.0f, 0.0f, 0.0f}},
     {{0.8f, 0.8f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.2f, 0.8f}, {0.0f, 1.0f, 0.0f}}};
+    {{-0.2f, 0.8f}, {0.0f, 0.0f, 1.0f}}};
 
 class MainApp
 {
@@ -42,6 +47,7 @@ private:
     VBAllocator vbAllocator;
     VkBuffer vertexBuffer;
     VkBuffer vertexBuffer2;
+    VkBuffer vertexBuffer3;
     // VulkanInstance vkInst;
 
     void initWindow()
@@ -50,10 +56,13 @@ private:
     };
     void initVulkan()
     {
+        std::cout << "The Size of  Vertex is " << sizeof(VKHelpers::Vertex) << std::endl;
         VulkanInstance::getInstance().initVulkan(window);
         VulkanInstance::getInstance().ChangeBackgroundColor(0.0f, 0.0f, 0.0f, 1.0f);
-        vbAllocator.AddMesh(vertices, vertexBuffer);
-        vbAllocator.AddMesh(vertices2, vertexBuffer2);
+
+        vbAllocator.AddMesh(&vertices, vertexBuffer);
+        vbAllocator.AddMesh(&vertices2, vertexBuffer2);
+        vbAllocator.AddMesh(&vertices3, vertexBuffer3);
         vbAllocator.AllocateVertexBuffer(VulkanInstance::getInstance().physicalDevice);
     };
     void mainLoop()
@@ -87,11 +96,15 @@ private:
         VulkanInstance::getInstance().BindGraphicsPipeline(VulkanInstance::getInstance().graphicsPipeline);
         VulkanInstance::getInstance().SetViewportandScissor(commandBuffer);
 
+        vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer2);
+
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
         vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer);
 
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
-        vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer2);
+        vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer3);
 
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
