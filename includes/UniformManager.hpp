@@ -1,5 +1,11 @@
 #include "vulkanhelpers.hpp"
 
+struct UniformBufferObject
+{
+    alignas(16) glm::vec3 color;
+    alignas(16) glm::vec3 pos;
+};
+
 class UBOMgr
 {
 private:
@@ -11,6 +17,9 @@ private:
     int setSize;
     std::map<VkDescriptorSetLayout, int> LayoutAndStructSize;
     std::map<VkDescriptorSetLayout, std::vector<VkDescriptorSet *>> LayoutAndSet;
+    std::map<VkDescriptorSet, VkDeviceSize> SetAndOffset;
+
+    void *mappedData;
 
 public:
     UBOMgr()
@@ -49,11 +58,15 @@ public:
         }
 
         LayoutAndStructSize[layout] = size;
+
+        std::cout << "Layout Created" << std::endl;
+        std::cout << LayoutAndStructSize.size() << std::endl;
     }
 
     void SubscribeToLayout(VkDescriptorSetLayout &layout, VkDescriptorSet &set)
     {
         LayoutAndSet[layout].push_back(&set);
+        std::cout << "Subscribed to Layout " << LayoutAndSet[layout].size() << std::endl;
         setSize++;
     }
 
@@ -85,16 +98,30 @@ public:
     {
 
         std::vector<VkDescriptorSetLayout> layouts;
-        for (auto &layout : LayoutAndSet)
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+        for (auto &layout : LayoutAndStructSize)
         {
             layouts.push_back(layout.first);
         }
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
-        pipelineLayoutInfo.pSetLayouts = layouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
-        pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+        std::cout << "Layouts Size: " << layouts.size() << std::endl;
+
+        if (layouts.size() != 0)
+        {
+            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+            pipelineLayoutInfo.pSetLayouts = layouts.data();
+            pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
+            pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+        }
+        else
+        {
+            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount = 0;
+            pipelineLayoutInfo.pSetLayouts = nullptr;
+            pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
+            pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+        }
 
         if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
         {
@@ -123,14 +150,44 @@ public:
 
     void AllocateDescriptors(VkDevice &device, VkPhysicalDevice &physicalDevice)
     {
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+        std::cout << "Currently Allocating Descriptors" << std::endl;
         VkDeviceSize bufferSize = 0;
         for (auto &layout : LayoutAndSet)
         {
             int StructSize = LayoutAndStructSize[layout.first];
             int SetCount = layout.second.size();
 
-            bufferSize += StructSize * SetCount;
+            std::cout << "About To Allocate " << SetCount << " Sets of " << StructSize << " Bytes" << std::endl;
+
+            bufferSize += AlignMemory(deviceProperties.limits.minUniformBufferOffsetAlignment, StructSize) * SetCount;
         }
+
+        for (auto &layout : LayoutAndSet)
+        {
+            std::vector<VkDescriptorSetLayout> layouts(layout.second.size(), layout.first);
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = pool;
+            allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
+            allocInfo.pSetLayouts = layouts.data();
+            std::vector<VkDescriptorSet> descriptorSets(layout.second.size());
+            if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to allocate descriptor sets!");
+            }
+
+            for (int i = 0; i < layout.second.size(); i++)
+            {
+                *(layout.second[i]) = descriptorSets[i];
+                std::cout << "Descriptor Set Allocated: " << descriptorSets[i] << std::endl;
+            }
+        }
+
+        std::cout << "Total Buffer Size: " << bufferSize << std::endl;
+
         // Create Buffer
         VkBufferCreateInfo bufferInfo = {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -145,6 +202,7 @@ public:
 
         VkMemoryRequirements memReqs;
         vkGetBufferMemoryRequirements(device, uniformBuffer, &memReqs);
+        std::cout << "Memory Requirements: " << memReqs.alignment << std::endl;
 
         VkPhysicalDeviceMemoryProperties memProps;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
@@ -159,12 +217,24 @@ public:
             throw std::runtime_error("failed to allocate buffer memory");
         }
 
+        std::cout << "Memory Allocated " << memReqs.size << " Bytes" << std::endl;
+
         vkBindBufferMemory(device, uniformBuffer, uniformBufferMemory, 0);
+
+        vkMapMemory(device, uniformBufferMemory, 0, bufferSize, 0, &mappedData);
 
         // Update Descriptor Sets
         VkDeviceSize offset = 0;
         std::vector<VkDescriptorBufferInfo> bufferInfos;
         std::vector<VkWriteDescriptorSet> descriptorWrites;
+
+        size_t totalDescriptorWrites = 0;
+        for (auto &layout : LayoutAndSet)
+        {
+            totalDescriptorWrites += layout.second.size();
+        }
+        bufferInfos.reserve(totalDescriptorWrites);
+
         for (auto &layout : LayoutAndSet)
         {
             int StructSize = LayoutAndStructSize[layout.first];
@@ -176,6 +246,10 @@ public:
                 bufferInfo.buffer = uniformBuffer;
                 bufferInfo.offset = offset;
                 bufferInfo.range = StructSize;
+
+                SetAndOffset[*layout.second[i]] = offset;
+
+                std::cout << "Descriptor Set: " << *layout.second[i] << " Offset: " << offset << std::endl;
 
                 bufferInfos.push_back(bufferInfo);
                 offset += AlignMemory(memReqs.alignment, StructSize);
@@ -189,12 +263,22 @@ public:
                 descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 descriptorWrite.descriptorCount = 1;
 
-                descriptorWrite.pBufferInfo = &bufferInfos.back();
-                descriptorWrite.pImageInfo = nullptr;       // Optional
-                descriptorWrite.pTexelBufferView = nullptr; // Optional
+                descriptorWrite.pBufferInfo = &bufferInfos.back(); // Optional
+                descriptorWrite.pImageInfo = nullptr;              // Optional
+                descriptorWrite.pTexelBufferView = nullptr;        // Optional
+
+                descriptorWrites.push_back(descriptorWrite);
             }
         }
 
+        std::cout << "Descriptor Writes Size: " << descriptorWrites.size() << std::endl;
+
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
+
+    void SetUniform(VkDescriptorSet &descriptor, UniformBufferObject ubo)
+    {
+        VkDeviceSize offset = SetAndOffset[descriptor];
+        memcpy((char *)mappedData + offset, &ubo, sizeof(ubo));
     }
 };
