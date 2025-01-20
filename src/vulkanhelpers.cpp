@@ -274,10 +274,10 @@ void VKHelpers::CreateGraphicsPipeline(VkDevice &device,
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount = 0;
-  vertexInputInfo.pVertexBindingDescriptions = nullptr;
-  vertexInputInfo.vertexAttributeDescriptionCount = 0;
-  vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+  // vertexInputInfo.vertexBindingDescriptionCount = 0;
+  // vertexInputInfo.pVertexBindingDescriptions = nullptr;
+  // vertexInputInfo.vertexAttributeDescriptionCount = 0;
+  // vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
   auto bindingDescription = VKHelpers::Vertex::getBindingDescription();
   auto attributeDescriptions = VKHelpers::Vertex::getAttributeDescriptions();
@@ -494,10 +494,7 @@ void VKHelpers::CreateCommandBuffer(
 
 void VKHelpers::CreateCommandMultipleBuffers(
     VkDevice &device, VkCommandPool &commandPool,
-    std::vector<VkCommandBuffer> &commandBuffer, uint32_t commandBufferSize,
-    VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers,
-    VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline,
-    VkPipelineLayout &pipelineLayout)
+    std::vector<VkCommandBuffer> &commandBuffer, uint32_t commandBufferSize)
 {
   commandBuffer.resize(commandBufferSize);
   VkCommandBufferAllocateInfo allocInfo = {};

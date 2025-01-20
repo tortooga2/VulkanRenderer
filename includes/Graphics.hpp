@@ -2,6 +2,7 @@
 
 #include "vulkanhelpers.hpp"
 #include "VBAllocator.hpp"
+#include "UniformManager.hpp"
 #include "fileManagment.hpp"
 
 // namespace gfx
@@ -62,12 +63,12 @@ struct VulkanInstance
         VKHelpers::CreateSwapChain(window, physicalDevice, device, surface, swapChain, swapChainImages, swapChainExtent, swapChainImageFormat);
         VKHelpers::CreateImageViews(device, swapChainImageViews, swapChainImages, swapChainImageFormat);
         VKHelpers::CreateRenderPass(device, swapChainImageFormat, renderPass);
-        VKHelpers::CreateGraphicsPipeline(device, swapChainExtent, pipelineLayout, renderPass, graphicsPipeline);
+
         VKHelpers::CreateFramebuffers(device, swapChainFramebuffers, renderPass, swapChainImageViews, swapChainExtent);
         auto queueFam = VKHelpers::FindQueueFamilies(physicalDevice, surface);
         VKHelpers::CreateCommandPool(device, commandPool, queueFam);
 
-        VKHelpers::CreateCommandMultipleBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT, renderPass, swapChainFramebuffers, swapChainExtent, graphicsPipeline, pipelineLayout);
+        VKHelpers::CreateCommandMultipleBuffers(device, commandPool, commandBuffers, MAX_FRAMES_IN_FLIGHT);
         imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);

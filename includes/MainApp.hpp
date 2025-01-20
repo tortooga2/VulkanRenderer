@@ -9,19 +9,19 @@ const char *path = "./Shaders/compiled/";
 #endif
 
 std::vector<VKHelpers::Vertex> vertices = {
-    {{-1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}},
-    {{1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}};
+    {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}}};
 
 std::vector<VKHelpers::Vertex> vertices2 = {
-    {{0.0f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}};
+    {{0.0f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}}};
 
 std::vector<VKHelpers::Vertex> vertices3 = {
-    {{0.3f, -0.2f}, {1.0f, 0.0f, 0.0f}},
-    {{0.8f, 0.8f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.2f, 0.8f}, {0.0f, 0.0f, 1.0f}}};
+    {{0.3f, -0.2f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.8f, 0.8f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.2f, 0.8f, 0.0f}, {0.0f, 0.0f, 1.0f}}};
 
 class MainApp
 {
@@ -44,7 +44,7 @@ private:
     // uint32_t currentFrame = 0;
 
     GLFWwindow *window;
-    VBAllocator vbAllocator;
+    VBAllocator<VKHelpers::Vertex> vbAllocator;
     VkBuffer vertexBuffer;
     VkBuffer vertexBuffer2;
     VkBuffer vertexBuffer3;
@@ -56,15 +56,18 @@ private:
     };
     void initVulkan()
     {
-        std::cout << "The Size of  Vertex is " << sizeof(VKHelpers::Vertex) << std::endl;
         VulkanInstance::getInstance().initVulkan(window);
+        VKHelpers::CreateGraphicsPipeline(VulkanInstance::getInstance().device, VulkanInstance::getInstance().swapChainExtent, VulkanInstance::getInstance().pipelineLayout, VulkanInstance::getInstance().renderPass, VulkanInstance::getInstance().graphicsPipeline);
+
         VulkanInstance::getInstance().ChangeBackgroundColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         vbAllocator.AddMesh(&vertices, vertexBuffer);
         vbAllocator.AddMesh(&vertices2, vertexBuffer2);
         vbAllocator.AddMesh(&vertices3, vertexBuffer3);
+
         vbAllocator.AllocateVertexBuffer(VulkanInstance::getInstance().physicalDevice);
     };
+
     void mainLoop()
     {
         while (!glfwWindowShouldClose(window))

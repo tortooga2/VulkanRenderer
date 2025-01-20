@@ -91,7 +91,7 @@ namespace VKHelpers
 
     struct Vertex
     {
-        glm::vec2 pos;
+        glm::vec3 pos;
         glm::vec3 color;
 
         static VkVertexInputBindingDescription getBindingDescription()
@@ -110,7 +110,7 @@ namespace VKHelpers
 
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
-            attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
             attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
             attributeDescriptions[1].binding = 0;
@@ -120,6 +120,13 @@ namespace VKHelpers
 
             return attributeDescriptions;
         }
+    };
+
+    struct UniformBufferObject
+    {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
     };
 
     const std::vector<const char *> deviceExtensions = {
@@ -187,10 +194,7 @@ namespace VKHelpers
 
     void CreateCommandMultipleBuffers(
         VkDevice &device, VkCommandPool &commandPool,
-        std::vector<VkCommandBuffer> &commandBuffer, uint32_t commandBufferSize,
-        VkRenderPass &renderPass, std::vector<VkFramebuffer> &swapChainFramebuffers,
-        VkExtent2D &swapChainExtent, VkPipeline &graphicsPipeline,
-        VkPipelineLayout &pipelineLayout);
+        std::vector<VkCommandBuffer> &commandBuffer, uint32_t commandBufferSize);
 
     void CreateSemaphores(VkDevice &device, VkSemaphore &semephore);
 
