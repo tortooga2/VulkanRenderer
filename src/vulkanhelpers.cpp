@@ -371,22 +371,22 @@ void VKHelpers::CreateGraphicsPipeline(VkDevice &device,
   colorBlending.blendConstants[3] = 0.0f; // Optional
 
   // Pipeline Layout
-  VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount = 0;            // Optional
-  pipelineLayoutInfo.pSetLayouts = nullptr;         // Optional
-  pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
-  pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+  // VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+  // pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  // pipelineLayoutInfo.setLayoutCount = 0;            // Optional
+  // pipelineLayoutInfo.pSetLayouts = nullptr;         // Optional
+  // pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
+  // pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-  if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr,
-                             &pipelineLayout) != VK_SUCCESS)
-  {
-    throw std::runtime_error("Failed to create pipeline layout!");
-  }
-  else
-  {
-    std::cout << "Pipeline layout created successfully" << std::endl;
-  }
+  // if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr,
+  //                            &pipelineLayout) != VK_SUCCESS)
+  // {
+  //   throw std::runtime_error("Failed to create pipeline layout!");
+  // }
+  // else
+  // {
+  //   std::cout << "Pipeline layout created successfully" << std::endl;
+  // }
 
   VkGraphicsPipelineCreateInfo pipelineInfo = {};
   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
