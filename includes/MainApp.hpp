@@ -26,7 +26,7 @@ std::vector<VKHelpers::Vertex> vertices3 = {
 class MainApp
 {
 public:
-    MainApp(int width, int height) : WIDTH(width), HEIGHT(height), vbAllocator(VulkanInstance::getInstance().device) {
+    MainApp(int width, int height) : WIDTH(width), HEIGHT(height), vkInst(&VulkanInstance::getInstance()), vbAllocator(vkInst->device) {
                                      };
 
     void run()
@@ -44,6 +44,8 @@ private:
     // uint32_t currentFrame = 0;
 
     GLFWwindow *window;
+    VulkanInstance *vkInst;
+
     VBAllocator<VKHelpers::Vertex> vbAllocator;
     VkBuffer vertexBuffer;
     VkBuffer vertexBuffer2;
@@ -56,9 +58,18 @@ private:
     VkDescriptorSet descriptorSet2;
     VkDescriptorSet descriptorSet3;
 
+    struct UniformBufferObject
+    {
+        alignas(16) glm::vec3 color;
+        alignas(16) glm::vec3 pos;
+    };
+
     UniformBufferObject ubo1 = {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0)};
     UniformBufferObject ubo2 = {glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0)};
     UniformBufferObject ubo3 = {glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0)};
+
+    float x = 0.0f;
+    float y = 0.0f;
 
     void initWindow()
     {
@@ -66,16 +77,17 @@ private:
     };
     void initVulkan()
     {
-        VulkanInstance::getInstance().initVulkan(window);
-        UB.CreateLayout(VulkanInstance::getInstance().device, descriptorSetLayout, sizeof(UniformBufferObject));
-        UB.CreatePipelineLayout(VulkanInstance::getInstance().device, VulkanInstance::getInstance().pipelineLayout);
-        VKHelpers::CreateGraphicsPipeline(VulkanInstance::getInstance().device, VulkanInstance::getInstance().swapChainExtent, VulkanInstance::getInstance().pipelineLayout, VulkanInstance::getInstance().renderPass, VulkanInstance::getInstance().graphicsPipeline);
+
+        vkInst->initVulkan(window);
+        UB.CreateLayout(vkInst->device, descriptorSetLayout, sizeof(UniformBufferObject));
+        UB.CreatePipelineLayout(vkInst->device, vkInst->pipelineLayout);
+        VKHelpers::CreateGraphicsPipeline(vkInst->device, vkInst->swapChainExtent, vkInst->pipelineLayout, vkInst->renderPass, vkInst->graphicsPipeline);
         UB.SubscribeToLayout(descriptorSetLayout, descriptorSet1);
         UB.SubscribeToLayout(descriptorSetLayout, descriptorSet2);
         UB.SubscribeToLayout(descriptorSetLayout, descriptorSet3);
-        UB.CreatePool(VulkanInstance::getInstance().device);
-        UB.AllocateDescriptors(VulkanInstance::getInstance().device, VulkanInstance::getInstance().physicalDevice);
-        VulkanInstance::getInstance().ChangeBackgroundColor(0.0f, 0.0f, 0.0f, 1.0f);
+        UB.CreatePool(vkInst->device);
+        UB.AllocateDescriptors(vkInst->device, vkInst->physicalDevice);
+        vkInst->ChangeBackgroundColor(0.0f, 1.0f, 0.0f, 1.0f);
         UB.SetUniform(descriptorSet1, ubo1);
         UB.SetUniform(descriptorSet2, ubo2);
         UB.SetUniform(descriptorSet3, ubo3);
@@ -84,7 +96,7 @@ private:
         vbAllocator.AddMesh(&vertices2, vertexBuffer2);
         vbAllocator.AddMesh(&vertices3, vertexBuffer3);
 
-        vbAllocator.AllocateVertexBuffer(VulkanInstance::getInstance().physicalDevice);
+        vbAllocator.AllocateVertexBuffer(vkInst->physicalDevice);
     };
 
     void mainLoop()
@@ -93,60 +105,65 @@ private:
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
-            VulkanInstance::getInstance().BeginDrawFrame();
-            VulkanInstance::getInstance().ResetCommandButter();
-            ubo3.pos = glm::vec3(cos(t), 0.0f, 0.0f);
+            vkInst->BeginDrawFrame();
+            vkInst->ResetCommandButter();
+            Update();
             UB.SetUniform(descriptorSet3, ubo3);
-            Draw(VulkanInstance::getInstance().commandBuffers[VulkanInstance::getInstance().currentFrame]);
-            VulkanInstance::getInstance().EndDrawFrame();
-            VulkanInstance::getInstance().PresentFinalFrame();
+            Draw(vkInst->commandBuffers[vkInst->currentFrame]);
+            vkInst->EndDrawFrame();
+            vkInst->PresentFinalFrame();
             t += 0.0001f;
         }
 
-        vkDeviceWaitIdle(VulkanInstance::getInstance().device);
+        vkDeviceWaitIdle(vkInst->device);
     };
 
     void cleanup()
     {
 
         vbAllocator.Cleanup();
-        UB.cleanUp(VulkanInstance::getInstance().device);
-        VulkanInstance::getInstance().cleanup();
+        UB.cleanUp(vkInst->device);
+        vkInst->cleanup();
 
         glfwDestroyWindow(window);
         glfwTerminate();
     };
 
+    void Update()
+    {
+        if (glfwGetKey(window, GLFW_KEY_W))
+        {
+            y += 0.0001f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S))
+        {
+            y -= 0.0001f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A))
+        {
+            x -= 0.0001f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_D))
+        {
+            x += 0.0001f;
+        }
+        ubo3.pos.x = x;
+        ubo3.pos.y = -y;
+    }
+
     void Draw(VkCommandBuffer commandBuffer)
     {
-        VulkanInstance::getInstance().BeginCommandBuffer();
-        VulkanInstance::getInstance().BeginRenderPass();
-        VulkanInstance::getInstance().BindGraphicsPipeline(VulkanInstance::getInstance().graphicsPipeline);
-        VulkanInstance::getInstance().SetViewportandScissor(commandBuffer);
+        vkInst->BeginCommandBuffer();
+        vkInst->BeginRenderPass();
+        vkInst->BindGraphicsPipeline(vkInst->graphicsPipeline);
+        vkInst->SetViewportandScissor(commandBuffer);
 
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, VulkanInstance::getInstance().pipelineLayout, 0, 1, &descriptorSet3, 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkInst->pipelineLayout, 0, 1, &descriptorSet3, 0, nullptr);
 
         vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer2);
-
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
-        // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, VulkanInstance::getInstance().pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
-
-        // vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer2);
-
-        // vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
-        // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, VulkanInstance::getInstance().pipelineLayout, 0, 1, &descriptorSet3, 0, nullptr);
-
-        // vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer2);
-
-        // vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
-        // vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer3);
-
-        // vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
-        VulkanInstance::getInstance().EndRenderPass();
-        VulkanInstance::getInstance().EndCommandBuffer();
+        vkInst->EndRenderPass();
+        vkInst->EndCommandBuffer();
     };
 };

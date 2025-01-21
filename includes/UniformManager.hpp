@@ -1,11 +1,5 @@
 #include "vulkanhelpers.hpp"
 
-struct UniformBufferObject
-{
-    alignas(16) glm::vec3 color;
-    alignas(16) glm::vec3 pos;
-};
-
 class UBOMgr
 {
 private:
@@ -33,6 +27,10 @@ public:
 
     void cleanUp(VkDevice &device)
     {
+        for (auto &layout : LayoutAndSet)
+        {
+            vkDestroyDescriptorSetLayout(device, layout.first, nullptr);
+        }
         vkDestroyBuffer(device, uniformBuffer, nullptr);
         vkFreeMemory(device, uniformBufferMemory, nullptr);
         vkDestroyDescriptorPool(device, pool, nullptr);
@@ -276,8 +274,10 @@ public:
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 
-    void SetUniform(VkDescriptorSet &descriptor, UniformBufferObject ubo)
+    template <typename T>
+    void SetUniform(VkDescriptorSet &descriptor, T ubo)
     {
+
         VkDeviceSize offset = SetAndOffset[descriptor];
         memcpy((char *)mappedData + offset, &ubo, sizeof(ubo));
     }
