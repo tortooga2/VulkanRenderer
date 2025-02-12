@@ -66,7 +66,7 @@ private:
 
     UniformBufferObject ubo1 = {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0)};
     UniformBufferObject ubo2 = {glm::vec3(1.0f, 0.0f, 1.0f), glm::vec3(0.0)};
-    UniformBufferObject ubo3 = {glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0)};
+    UniformBufferObject ubo3 = {glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0)};
 
     float x = 0.0f;
     float y = 0.0f;
@@ -87,7 +87,7 @@ private:
         UB.SubscribeToLayout(descriptorSetLayout, descriptorSet3);
         UB.CreatePool(vkInst->device);
         UB.AllocateDescriptors(vkInst->device, vkInst->physicalDevice);
-        vkInst->ChangeBackgroundColor(0.0f, 1.0f, 0.0f, 1.0f);
+        vkInst->ChangeBackgroundColor(0.0f, 0.0f, 0.0f, 1.0f);
         UB.SetUniform(descriptorSet1, ubo1);
         UB.SetUniform(descriptorSet2, ubo2);
         UB.SetUniform(descriptorSet3, ubo3);

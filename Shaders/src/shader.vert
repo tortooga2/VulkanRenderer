@@ -21,6 +21,6 @@ void main() {
     
     
 
-    gl_Position = model * vec4(inPosition, 1.0);
+    gl_Position = vec4(inPosition, 1.0);
     fragColor = ubo.uColor;
 }
