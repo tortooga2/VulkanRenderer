@@ -133,22 +133,24 @@ private:
     {
         if (glfwGetKey(window, GLFW_KEY_W))
         {
-            y += 0.0001f;
+            y += 0.01f;
         }
         if (glfwGetKey(window, GLFW_KEY_S))
         {
-            y -= 0.0001f;
+            y -= 0.01f;
         }
         if (glfwGetKey(window, GLFW_KEY_A))
         {
-            x -= 0.0001f;
+            x -= 0.01f;
         }
         if (glfwGetKey(window, GLFW_KEY_D))
         {
-            x += 0.0001f;
+            x += 0.01f;
         }
         ubo3.pos.x = x;
         ubo3.pos.y = -y;
+
+        std::cout << "X: " << x << " Y: " << y << std::endl;
     }
 
     void Draw(VkCommandBuffer commandBuffer)
@@ -160,7 +162,7 @@ private:
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkInst->pipelineLayout, 0, 1, &descriptorSet3, 0, nullptr);
 
-        vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer2);
+        vbAllocator.BindVertexBuffer(commandBuffer, vertexBuffer3);
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
         vkInst->EndRenderPass();
