@@ -41,7 +41,7 @@ struct VulkanInstance
     const int MAX_FRAMES_IN_FLIGHT = 2;
     uint32_t imageIndex = 0;
 
-    VkClearValue clearColor;
+    VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
     VkViewport viewport;
     VkRect2D scissor;
     // Flags
@@ -408,7 +408,8 @@ struct VulkanInstance
         scissor.offset = {0, 0};
         scissor.extent = swapChainExtent;
 
-        clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+        
+        // clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
     }
 
     void ChangeViewportSize(uint32_t width, uint32_t height)

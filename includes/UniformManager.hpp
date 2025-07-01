@@ -36,6 +36,8 @@ public:
         vkDestroyDescriptorPool(device, pool, nullptr);
     }
 
+    //Record key information about the desctorSetLayout like the Uniform buffers size. 
+
     void CreateLayout(VkDevice &device, VkDescriptorSetLayout &layout, VkDeviceSize size)
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding = {};
